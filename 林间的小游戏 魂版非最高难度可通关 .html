@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>林间小游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        h1 {
+            color: #60a5fa;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .game-status {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background-color: #1e293b;
+            padding: 12px;
+            border-radius: 8px;
+            min-width: 0;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+        
+        .stat-value {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .price-up {
+            color: #4ade80;
+        }
+        
+        .price-down {
+            color: #f87171;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .speed-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-start {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-restart {
+            background-color: #8b5cf6;
+            color: white;
+        }
+        
+        .btn-speed {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            min-width: 60px;
+            padding: 8px 12px;
+        }
+        
+        .btn-speed.active {
+            background-color: #60a5fa;
+            color: white;
+            border-color: #60a5fa;
+        }
+        
+        .btn-disabled {
+            background-color: #64748b;
+            color: #cbd5e1;
+            cursor: not-allowed;
+        }
+        
+        .btn-disabled:hover {
+            transform: none;
+        }
+        
+        .trading-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .trading-btn {
+            padding: 12px 8px;
+            font-size: 0.85rem;
+        }
+        
+        .btn-full-buy {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .btn-full-sell {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .btn-half-buy {
+            background-color: #22c55e;
+            color: white;
+        }
+        
+        .btn-half-sell {
+            background-color: #f87171;
+            color: white;
+        }
+        
+        .chart-container {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .chart-title {
+            margin-bottom: 10px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 250px;
+            background-color: #1e293b;
+        }
+        
+        .game-log {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-title {
+            margin-bottom: 10px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+            font-size: 0.8rem;
+        }
+        
+        .log-time {
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+        
+        .log-buy {
+            color: #10b981;
+        }
+        
+        .log-sell {
+            color: #ef4444;
+        }
+        
+        .log-event {
+            color: #fbbf24;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .game-over-content {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .game-over h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        
+        .win {
+            color: #4ade80;
+        }
+        
+        .lose {
+            color: #f87171;
+        }
+        
+        .game-over-stats {
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>高频交易游戏魂版非最难</h1>
+            <p>目标：通过交易将$10,000增值到$1,000,000</p>
+        </header>
+        
+        <div class="game-status">
+            <div class="stat-box">
+                <div class="stat-label">当前股价</div>
+                <div id="current-price" class="stat-value price-up">$100.00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">买入价格</div>
+                <div id="buy-price" class="stat-value">$0.00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">现金余额</div>
+                <div id="cash-balance" class="stat-value">$10,000.00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">持仓数量</div>
+                <div id="stock-amount" class="stat-value">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">持仓价值</div>
+                <div id="stock-value" class="stat-value">$0.00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">总资产</div>
+                <div id="total-assets" class="stat-value">$10,000.00</div>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <button id="start-btn" class="btn btn-start">开始游戏</button>
+            <button id="restart-game-btn" class="btn btn-restart" disabled>重新开始</button>
+        </div>
+        
+        <div class="speed-controls">
+            <button id="speed-0.5x" class="btn btn-speed">0.5x</button>
+            <button id="speed-1x" class="btn btn-speed active">1x</button>
+            <button id="speed-2x" class="btn btn-speed">2x</button>
+            <button id="speed-4x" class="btn btn-speed">4x</button>
+        </div>
+        
+        <div class="trading-buttons">
+            <button id="full-buy-btn" class="trading-btn btn-full-buy" disabled>全仓买入</button>
+            <button id="full-sell-btn" class="trading-btn btn-full-sell" disabled>清仓卖出</button>
+            <button id="half-buy-btn" class="trading-btn btn-half-buy" disabled>半仓买入</button>
+            <button id="half-sell-btn" class="trading-btn btn-half-sell" disabled>半仓卖出</button>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">
+                <span>股价走势图</span>
+                <span id="chart-status">游戏未开始</span>
+            </div>
+            <canvas id="price-chart"></canvas>
+        </div>
+        
+        <div class="game-log">
+            <div class="log-title">交易日志</div>
+            <div id="log-entries">
+                <div class="log-entry">游戏准备就绪，点击"开始游戏"按钮开始交易</div>
+            </div>
+        </div>
+        
+        <div id="game-over-screen" class="game-over hidden">
+            <div class="game-over-content">
+                <h2 id="game-result"></h2>
+                <div class="game-over-stats">
+                    <p>最终资产: <span id="final-assets"></span></p>
+                    <p>交易次数: <span id="trade-count">0</span></p>
+                    <p>管理费合计: <span id="total-fees">$0.00</span></p>
+                </div>
+                <button id="restart-btn" class="btn btn-start">重新开始游戏</button>
+                <button id="continue-btn" class="btn btn-restart hidden">继续游戏</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态变量
+        let gameActive = false;
+        let cash = 10000;
+        let stockAmount = 0;
+        let stockPrice = 100;
+        let buyPrice = 0;
+        let priceHistory = [];
+        let gameInterval;
+        let priceUpdateInterval;
+        let managementFeeInterval;
+        let managementFeeCount = 0;
+        let tradeCount = 0;
+        let totalFees = 0;
+        let priceTrend = 0;
+        let trendStrength = 0;
+        
+        // 大曲线机制变量
+        let isTrending = false;
+        let trendDirection = 0;
+        let trendDuration = 0;
+        let trendRemaining = 0;
+        let trendBaseChange = 0;
+        
+        // 保底价机制变量
+        let isBottomPriceProtection = false;
+        let bottomPriceProtectionCount = 0;
+        
+        // 价格冻结机制变量
+        let isPriceFreeze = false;
+        let priceFreezeCount = 0;
+        
+        // 速度控制变量
+        let updateSpeed = 1;
+        let baseUpdateInterval = 400;
+        let currentUpdateInterval;
+        
+        // 获取DOM元素
+        const startBtn = document.getElementById('start-btn');
+        const restartGameBtn = document.getElementById('restart-game-btn');
+        const fullBuyBtn = document.getElementById('full-buy-btn');
+        const fullSellBtn = document.getElementById('full-sell-btn');
+        const halfBuyBtn = document.getElementById('half-buy-btn');
+        const halfSellBtn = document.getElementById('half-sell-btn');
+        const speed05xBtn = document.getElementById('speed-0.5x');
+        const speed1xBtn = document.getElementById('speed-1x');
+        const speed2xBtn = document.getElementById('speed-2x');
+        const speed4xBtn = document.getElementById('speed-4x');
+        const restartBtn = document.getElementById('restart-btn');
+        const continueBtn = document.getElementById('continue-btn');
+        
+        const currentPriceEl = document.getElementById('current-price');
+        const buyPriceEl = document.getElementById('buy-price');
+        const cashBalanceEl = document.getElementById('cash-balance');
+        const stockAmountEl = document.getElementById('stock-amount');
+        const stockValueEl = document.getElementById('stock-value');
+        const totalAssetsEl = document.getElementById('total-assets');
+        const chartStatusEl = document.getElementById('chart-status');
+        const logEntriesEl = document.getElementById('log-entries');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const gameResultEl = document.getElementById('game-result');
+        const finalAssetsEl = document.getElementById('final-assets');
+        const tradeCountEl = document.getElementById('trade-count');
+        const totalFeesEl = document.getElementById('total-fees');
+        
+        // 图表初始化
+        const chartCanvas = document.getElementById('price-chart');
+        const ctx = chartCanvas.getContext('2d');
+        
+        // 设置画布尺寸
+        chartCanvas.width = chartCanvas.offsetWidth;
+        chartCanvas.height = chartCanvas.offsetHeight;
+        
+        // 初始化股价历史记录
+        for (let i = 0; i < 400; i++) {
+            priceHistory.push(100);
+        }
+        
+        // 绘制股价图表
+        function drawChart() {
+            const canvasWidth = chartCanvas.width;
+            const canvasHeight = chartCanvas.height;
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // 计算价格范围
+            const prices = priceHistory.slice(-400);
+            const maxPrice = Math.max(...prices);
+            const minPrice = Math.min(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            // 添加一些边距
+            const chartTop = 15;
+            const chartBottom = canvasHeight - 15;
+            const chartHeight = chartBottom - chartTop;
+            
+            // 绘制网格
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            
+            // 水平网格线
+            for (let i = 0; i <= 5; i++) {
+                const y = chartTop + (chartHeight / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvasWidth, y);
+                ctx.stroke();
+            }
+            
+            // 绘制价格曲线
+            if (prices.length < 2) return;
+            
+            const xStep = canvasWidth / (prices.length - 1);
+            
+            // 确定线条颜色
+            ctx.strokeStyle = prices[prices.length - 1] >= prices[0] ? '#4ade80' : '#f87171';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < prices.length; i++) {
+                const x = i * xStep;
+                // 归一化价格到图表高度
+                const priceNormalized = (prices[i] - minPrice) / (priceRange || 1);
+                const y = chartBottom - priceNormalized * chartHeight;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+            
+            // 添加当前价格标签
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '12px Arial';
+            ctx.fillText(`当前: $${stockPrice.toFixed(2)}`, 8, 15);
+            ctx.fillText(`最高: $${maxPrice.toFixed(2)}`, 8, 30);
+            ctx.fillText(`最低: $${minPrice.toFixed(2)}`, 8, 45);
+        }
+        
+        // 更新股价
+        function updatePrice() {
+            if (!gameActive) return;
+            
+            const previousPrice = stockPrice;
+            let changePercent = 0;
+            
+            // 检查价格冻结机制是否生效
+            if (isPriceFreeze && priceFreezeCount > 0) {
+                priceFreezeCount--;
+                if (priceFreezeCount === 0) {
+                    isPriceFreeze = false;
+                    addLogEvent("⏸️ 价格冻结结束");
+                } else {
+                    // 价格保持不变
+                    priceHistory.push(stockPrice);
+                    if (priceHistory.length > 500) {
+                        priceHistory.shift();
+                    }
+                    updateDisplay();
+                    return;
+                }
+            }
+            
+            // 检查保底价机制触发条件
+            if (!isBottomPriceProtection && stockPrice <= 50 && stockAmount === 0) {
+                isBottomPriceProtection = true;
+                bottomPriceProtectionCount = 5 + Math.floor(Math.random() * 10);
+                addLogEvent("⚠️ 股价过低，触发保底价机制");
+            }
+            
+            // 保底价机制生效时的特殊波动
+            if (isBottomPriceProtection && bottomPriceProtectionCount > 0 && stockAmount === 0) {
+                // 强制上涨 5-15%
+                changePercent = 0.05 + Math.random() * 0.1;
+                bottomPriceProtectionCount--;
+                
+                if (bottomPriceProtectionCount === 0) {
+                    isBottomPriceProtection = false;
+                    addLogEvent("✅ 保底价机制结束");
+                }
+            } 
+            // 正常波动逻辑
+            else {
+                // 检查是否处于大曲线趋势中
+                if (isTrending && trendRemaining > 0) {
+                    // 大曲线趋势中的小幅波动 (1%-2.5%)
+                    changePercent = trendBaseChange * (0.5 + Math.random() * 0.5) * trendDirection;
+                    
+                    // 20%-30%概率反转趋势
+                    if (Math.random() < 0.25) {
+                        changePercent *= -1;
+                        addLogEvent(`🔄 趋势反转！`);
+                    }
+                    
+                    trendRemaining--;
+                    
+                    if (trendRemaining === 0) {
+                        isTrending = false;
+                        addLogEvent(`📊 大曲线趋势结束`);
+                    }
+                } else {
+                    // 判断是否开始新的大曲线趋势 (20%概率)
+                    if (Math.random() < 0.20 && !isTrending) {
+                        isTrending = true;
+                        trendDirection = Math.random() < 0.6 ? 1 : -1; // 60%概率上涨趋势
+                        trendDuration = 15 + Math.floor(Math.random() * 35); // 持续15-50次波动
+                        trendRemaining = trendDuration;
+                        trendBaseChange = 0.01 + Math.random() * 0.015; // 基础波动幅度1%-2.5%
+                        
+                        addLogEvent(`📊 开始${trendDirection > 0 ? '上涨' : '下跌'}大曲线趋势`);
+                    }
+                    
+                    // 判断是否触发暴涨暴跌
+                    const randomEvent = Math.random();
+                    const hasPosition = stockAmount > 0;
+                    
+                    if (randomEvent < 0.05) { // 5% 概率暴涨
+                        changePercent = 0.3 + Math.random() * 0.2;
+                        addLogEvent(`📈 股价暴涨！`);
+                    } else if (randomEvent < 0.1) { // 5% 概率暴跌
+                        changePercent = -0.3 - Math.random() * 0.2;
+                        addLogEvent(`📉 股价暴跌！`);
+                    } else if (randomEvent < 0.15) { // 5% 概率价格不变
+                        isPriceFreeze = true;
+                        priceFreezeCount = 2 + Math.floor(Math.random() * 4); // 2-5次价格不变
+                        addLogEvent(`⏸️ 价格冻结 ${priceFreezeCount} 次更新`);
+                        return;
+                    } else {
+                        // 根据持仓状态调整上涨概率
+                        const upProbability = hasPosition ? 0.7 : 0.8;
+                        
+                        if (Math.random() < upProbability) { 
+                            changePercent = 0.005 + Math.random() * 0.075;
+                        } else { 
+                            changePercent = -0.04 - Math.random() * 0.11;
+                        }
+                    }
+                    
+                    // 更新趋势 - 每次有20%概率改变趋势
+                    if (Math.random() < 0.2) {
+                        const trendChange = (Math.random() - 0.5) * 0.3;
+                        priceTrend += trendChange;
+                        priceTrend = Math.max(Math.min(priceTrend, 1), -1);
+                        trendStrength = Math.abs(priceTrend) * 0.05;
+                    }
+                    
+                    // 添加趋势影响
+                    changePercent += priceTrend * trendStrength;
+                }
+            }
+            
+            // 应用价格变化
+            stockPrice = stockPrice * (1 + changePercent);
+            stockPrice = Math.max(stockPrice, 0.01);
+            
+            priceHistory.push(stockPrice);
+            if (priceHistory.length > 500) {
+                priceHistory.shift();
+            }
+            
+            updateDisplay();
+            checkGameEnd();
+        }
+        
+        // 设置游戏速度
+        function setGameSpeed(speed) {
+            updateSpeed = speed;
+            
+            // 更新按钮状态
+            speed05xBtn.classList.remove('active');
+            speed1xBtn.classList.remove('active');
+            speed2xBtn.classList.remove('active');
+            speed4xBtn.classList.remove('active');
+            
+            if (speed === 0.5) speed05xBtn.classList.add('active');
+            if (speed === 1) speed1xBtn.classList.add('active');
+            if (speed === 2) speed2xBtn.classList.add('active');
+            if (speed === 4) speed4xBtn.classList.add('active');
+            
+            // 如果游戏正在运行，重新设置定时器
+            if (gameActive) {
+                clearInterval(priceUpdateInterval);
+                
+                // 计算新的更新间隔
+                currentUpdateInterval = baseUpdateInterval / speed;
+                
+                // 重新启动定时器
+                priceUpdateInterval = setInterval(updatePrice, currentUpdateInterval);
+            }
+        }
+        
+        // 更新显示
+        function updateDisplay() {
+            // 更新价格
+            const priceChangeClass = stockPrice >= priceHistory[priceHistory.length - 2] ? 'price-up' : 'price-down';
+            currentPriceEl.textContent = `$${stockPrice.toFixed(2)}`;
+            currentPriceEl.className = `stat-value ${priceChangeClass}`;
+            
+            // 更新买入价格
+            if (buyPrice > 0) {
+                buyPriceEl.textContent = `$${buyPrice.toFixed(2)}`;
+                if (stockPrice > buyPrice) {
+                    buyPriceEl.className = 'stat-value price-up';
+                } else if (stockPrice < buyPrice) {
+                    buyPriceEl.className = 'stat-value price-down';
+                } else {
+                    buyPriceEl.className = 'stat-value';
+                }
+            } else {
+                buyPriceEl.textContent = '$0.00';
+                buyPriceEl.className = 'stat-value';
+            }
+            
+            // 更新现金余额
+            cashBalanceEl.textContent = `$${cash.toFixed(2)}`;
+            
+            // 更新持仓数量
+            stockAmountEl.textContent = stockAmount.toFixed(2);
+            
+            // 更新持仓价值
+            const stockValue = stockAmount * stockPrice;
+            stockValueEl.textContent = `$${stockValue.toFixed(2)}`;
+            
+            // 更新总资产
+            const totalAssets = cash + stockValue;
+            totalAssetsEl.textContent = `$${totalAssets.toFixed(2)}`;
+            
+            // 更新图表状态
+            const percentageChange = ((stockPrice - 100) / 100 * 100).toFixed(2);
+            const changeSign = percentageChange >= 0 ? '+' : '';
+            chartStatusEl.textContent = `从初始价格变化: ${changeSign}${percentageChange}%`;
+            
+            // 重新绘制图表
+            drawChart();
+            
+            // 更新按钮状态
+            updateButtonStates();
+        }
+        
+        // 更新按钮状态
+        function updateButtonStates() {
+            if (!gameActive) {
+                fullBuyBtn.disabled = true;
+                fullSellBtn.disabled = true;
+                halfBuyBtn.disabled = true;
+                halfSellBtn.disabled = true;
+                return;
+            }
+            
+            // 检查是否有足够现金买入
+            const canBuy = cash > 0;
+            fullBuyBtn.disabled = !canBuy;
+            halfBuyBtn.disabled = !canBuy;
+            
+            // 检查是否有股票可卖出
+            const canSell = stockAmount > 0;
+            fullSellBtn.disabled = !canSell;
+            halfSellBtn.disabled = !canSell;
+        }
+        
+        // 交易函数
+        function buyStock(percentage) {
+            if (!gameActive || cash <= 0) return;
+            
+            const buyAmount = cash * percentage;
+            const sharesToBuy = buyAmount / stockPrice;
+            
+            stockAmount += sharesToBuy;
+            cash -= buyAmount;
+            tradeCount++;
+            buyPrice = stockPrice;
+            
+            // 如果买入时保底价机制生效，则取消机制
+            if (isBottomPriceProtection) {
+                isBottomPriceProtection = false;
+                bottomPriceProtectionCount = 0;
+            }
+            
+            addLogTransaction(`买入 ${sharesToBuy.toFixed(2)} 股，价格 $${stockPrice.toFixed(2)}`, 'buy');
+            updateDisplay();
+        }
+        
+        function sellStock(percentage) {
+            if (!gameActive || stockAmount <= 0) return;
+            
+            const sharesToSell = stockAmount * percentage;
+            const sellValue = sharesToSell * stockPrice;
+            
+            stockAmount -= sharesToSell;
+            cash += sellValue;
+            tradeCount++;
+            
+            addLogTransaction(`卖出 ${sharesToSell.toFixed(2)} 股，价格 $${stockPrice.toFixed(2)}`, 'sell');
+            updateDisplay();
+        }
+        
+        // 添加交易日志
+        function addLogTransaction(message, type) {
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">${timeString}</span> - <span class="log-${type}">${message}</span>`;
+            
+            logEntriesEl.prepend(logEntry);
+            
+            // 限制日志条目数量
+            if (logEntriesEl.children.length > 20) {
+                logEntriesEl.removeChild(logEntriesEl.lastChild);
+            }
+        }
+        
+        // 添加事件日志
+        function addLogEvent(message) {
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">${timeString}</span> - <span class="log-event">${message}</span>`;
+            
+            logEntriesEl.prepend(logEntry);
+            
+            // 限制日志条目数量
+            if (logEntriesEl.children.length > 20) {
+                logEntriesEl.removeChild(logEntriesEl.lastChild);
+            }
+        }
+        
+        // 扣除管理费（每15秒一次）
+        function deductManagementFee() {
+            if (!gameActive) return;
+            
+            managementFeeCount++;
+            let fee = 0;
+            const totalAssets = cash + (stockAmount * stockPrice);
+            
+            // 资产分级收费机制
+            if (totalAssets >= 50000) {
+                // 计算资产等级 (每5万一个等级)
+                const assetLevel = Math.floor(totalAssets / 50000);
+                // 计算费率 (1%起步，每级+1%，最高10%)
+                const feeRate = Math.min(0.01 + (assetLevel - 1) * 0.01, 0.10);
+                fee = totalAssets * feeRate;
+                
+                // 基础管理费封顶500
+                const baseFee = Math.min(50 + (managementFeeCount - 1) * 50, 500);
+                fee = Math.max(fee, baseFee);
+                
+                addLogEvent(`💰 资产分级管理费: ${(feeRate * 100).toFixed(1)}% ($${fee.toFixed(2)})`);
+            } else {
+                // 原有机制 (从50开始，每次增加50)
+                fee = 50 + (managementFeeCount - 1) * 50;
+                addLogEvent(`💸 扣除管理费: $${fee.toFixed(2)} (第${managementFeeCount}次)`);
+            }
+            
+            // 强制扣除管理费逻辑
+            if (cash >= fee) {
+                cash -= fee;
+                totalFees += fee;
+            } else {
+                // 现金不足，尝试卖出股票
+                const stockValue = stockAmount * stockPrice;
+                
+                if (stockValue + cash >= fee) {
+                    // 计算需要卖出的股票数量
+                    const cashShortage = fee - cash;
+                    const sharesToSell = Math.min(stockAmount, Math.ceil(cashShortage / stockPrice));
+                    const sellValue = sharesToSell * stockPrice;
+                    
+                    stockAmount -= sharesToSell;
+                    cash += sellValue - fee;
+                    totalFees += fee;
+                    
+                    addLogEvent(`⚠️ 强制卖出 ${sharesToSell.toFixed(2)} 股支付管理费 $${fee.toFixed(2)}`);
+                } else {
+                    // 资产不足以支付管理费，直接破产
+                    cash -= fee;
+                    totalFees += fee;
+                    addLogEvent(`💸 无法支付管理费 $${fee.toFixed(2)}，资产不足！`);
+                }
+            }
+            
+            updateDisplay();
+            checkGameEnd();
+        }
+        
+        // 检查游戏结束条件
+        function checkGameEnd() {
+            if (!gameActive) return;
+            
+            const totalAssets = cash + (stockAmount * stockPrice);
+            
+            // 赢的条件：总资产达到1,000,000
+            if (totalAssets >= 1000000) {
+                endGame(true);
+                return;
+            }
+            
+            // 破产条件：现金为负且无法通过卖出股票弥补
+            if (cash < 0 && (stockAmount === 0 || (stockAmount * stockPrice) < Math.abs(cash))) {
+                endGame(false);
+                return;
+            }
+        }
+        
+        // 结束游戏
+        function endGame(isWin) {
+            gameActive = false;
+            
+            clearInterval(priceUpdateInterval);
+            clearInterval(managementFeeInterval);
+            
+            const totalAssets = cash + (stockAmount * stockPrice);
+            
+            if (isWin) {
+                gameResultEl.textContent = "🎉 恭喜你成为百万富翁！";
+                gameResultEl.className = "win";
+                continueBtn.classList.remove('hidden');
+            } else {
+                gameResultEl.textContent = "💸 游戏结束，你破产了！";
+                gameResultEl.className = "lose";
+                continueBtn.classList.add('hidden');
+            }
+            
+            finalAssetsEl.textContent = `$${totalAssets.toFixed(2)}`;
+            tradeCountEl.textContent = tradeCount;
+            totalFeesEl.textContent = `$${totalFees.toFixed(2)}`;
+            
+            gameOverScreen.classList.remove('hidden');
+            
+            addLogEvent(isWin ? "🎉 恭喜！你已达成百万资产目标！" : "💸 游戏结束！你的资产已低于$1,000");
+        }
+        
+        // 开始游戏
+        function startGame() {
+            if (gameActive) return;
+            
+            // 重置游戏状态
+            gameActive = true;
+            cash = 10000;
+            stockAmount = 0;
+            stockPrice = 100;
+            buyPrice = 0;
+            priceHistory = [];
+            managementFeeCount = 0;
+            tradeCount = 0;
+            totalFees = 0;
+            priceTrend = 0;
+            trendStrength = 0;
+            isTrending = false;
+            trendDirection = 0;
+            trendDuration = 0;
+            trendRemaining = 0;
+            trendBaseChange = 0;
+            isBottomPriceProtection = false;
+            bottomPriceProtectionCount = 0;
+            isPriceFreeze = false;
+            priceFreezeCount = 0;
+            
+            // 初始化价格历史
+            for (let i = 0; i < 400; i++) {
+                priceHistory.push(100);
+            }
+            
+            // 清空日志
+            logEntriesEl.innerHTML = '';
+            addLogEvent("游戏开始！初始资金 $10,000，初始股价 $100");
+            
+            // 隐藏游戏结束画面
+            gameOverScreen.classList.add('hidden');
+            
+            // 更新按钮文本
+            startBtn.textContent = "游戏中...";
+            startBtn.classList.add('btn-disabled');
+            startBtn.disabled = true;
+            restartGameBtn.disabled = false;
+            
+            // 计算更新间隔
+            currentUpdateInterval = baseUpdateInterval / updateSpeed;
+            
+            // 启动价格更新
+            priceUpdateInterval = setInterval(updatePrice, currentUpdateInterval);
+            
+            // 启动管理费扣除（每15秒）
+            managementFeeInterval = setInterval(deductManagementFee, 15000);
+            
+            // 更新显示
+            updateDisplay();
+        }
+        
+        // 重新开始游戏
+        function restartGame() {
+            clearInterval(priceUpdateInterval);
+            clearInterval(managementFeeInterval);
+            
+            // 重置所有游戏状态
+            gameActive = false;
+            cash = 10000;
+            stockAmount = 0;
+            stockPrice = 100;
+            buyPrice = 0;
+            priceHistory = [];
+            managementFeeCount = 0;
+            tradeCount = 0;
+            totalFees = 0;
+            priceTrend = 0;
+            trendStrength = 0;
+            isTrending = false;
+            trendDirection = 0;
+            trendDuration = 0;
+            trendRemaining = 0;
+            trendBaseChange = 0;
+            isBottomPriceProtection = false;
+            bottomPriceProtectionCount = 0;
+            isPriceFreeze = false;
+            priceFreezeCount = 0;
+            
+            // 重新初始化价格历史
+            for (let i = 0; i < 400; i++) {
+                priceHistory.push(100);
+            }
+            
+            // 清空日志
+            logEntriesEl.innerHTML = '';
+            addLogEvent("游戏已重置！初始资金 $10,000，初始股价 $100");
+            
+            // 隐藏游戏结束画面
+            gameOverScreen.classList.add('hidden');
+            
+            // 更新按钮状态
+            startBtn.textContent = "开始游戏";
+            startBtn.classList.remove('btn-disabled');
+            startBtn.disabled = false;
+            restartGameBtn.disabled = true;
+            
+            // 更新显示
+            updateDisplay();
+            
+            // 重新绘制图表
+            drawChart();
+        }
+        
+        // 继续游戏
+        function continueGame() {
+            // 隐藏游戏结束画面
+            gameOverScreen.classList.add('hidden');
+            
+            // 重置游戏状态为活跃
+            gameActive = true;
+            
+            // 重新启动定时器
+            priceUpdateInterval = setInterval(updatePrice, currentUpdateInterval);
+            managementFeeInterval = setInterval(deductManagementFee, 15000);
+            
+            addLogEvent("🚀 继续游戏，向更高目标前进！");
+        }
+        
+        // 初始化按钮事件
+        startBtn.addEventListener('click', startGame);
+        restartGameBtn.addEventListener('click', restartGame);
+        restartBtn.addEventListener('click', startGame);
+        continueBtn.addEventListener('click', continueGame);
+        
+        // 速度控制按钮事件
+        speed05xBtn.addEventListener('click', () => setGameSpeed(0.5));
+        speed1xBtn.addEventListener('click', () => setGameSpeed(1));
+        speed2xBtn.addEventListener('click', () => setGameSpeed(2));
+        speed4xBtn.addEventListener('click', () => setGameSpeed(4));
+        
+        // 交易按钮事件
+        fullBuyBtn.addEventListener('click', () => buyStock(1));
+        fullSellBtn.addEventListener('click', () => sellStock(1));
+        halfBuyBtn.addEventListener('click', () => buyStock(0.5));
+        halfSellBtn.addEventListener('click', () => sellStock(0.5));
+        
+        // 初始绘制图表
+        drawChart();
+        updateButtonStates();
+        
+        // 窗口大小变化时重新绘制图表
+        window.addEventListener('resize', () => {
+            chartCanvas.width = chartCanvas.offsetWidth;
+            chartCanvas.height = chartCanvas.offsetHeight;
+            drawChart();
+        });
+        
+        // 初始日志
+        addLogEvent("游戏准备就绪，点击'开始游戏'按钮开始交易");
+    </script>
+</body>
+</html>
